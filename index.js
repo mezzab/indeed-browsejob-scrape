@@ -55,7 +55,8 @@ async function fetchSalaryLinks(n, url) {
   });
 }
 
-function startScraping(url) {
+function scrapeJobsByTitle() {
+  const url = 'https://www.indeed.com/browsejobs/letter?title=A';
   let errorCounter = 0;
   let successCounter = 0;
   curl.get(url, null, async (err, resp, body) => {
@@ -97,4 +98,43 @@ function startScraping(url) {
   });
 }
 
-startScraping('https://www.indeed.com/browsejobs/letter?title=A');
+function scrapeJobsByCategory() {
+  const url = 'https://www.qa.indeed.net/browsejobs/';
+  let errorCounter = 0;
+  let successCounter = 0;
+  curl.get(url, null, async (err, resp, body) => {
+    if (resp.statusCode == 200) {
+      process.stdout.write('.');
+      const dom = new JSDOM(body);
+      const $ = require('jquery')(dom.window);
+      var links = $('a'),
+        hrefs = [];
+
+      for (var k = 0; k < links.length; k++) {
+        hrefs.push(links[k].href);
+      }
+
+      const categoryPagesUrls = hrefs.filter((x) => x.startsWith('/browsejobs/jobs?cat='));
+
+      for (var j = 0; j < categoryPagesUrls.length; j++) {
+        // we need make this synconous, because otherwise we will get banned by indeed.
+        try {
+          const response = await fetchSalaryLinks(j, `https://indeed.com${categoryPagesUrls[j]}`);
+          successCounter = successCounter + response.successCount;
+          console.log(response.message);
+        } catch (error) {
+          console.log(error);
+          errorCounter++;
+        }
+      }
+
+      console.log('- fetched ', successCounter, 'salary links successfully.');
+      console.log('- fetched ', errorCounter, ' salary links with error.');
+    } else {
+      console.log('- ERROR WHILE SCRAPPING THIS PAGE');
+    }
+  });
+}
+
+// scrapeJobsByTitle();
+scrapeJobsByCategory();
