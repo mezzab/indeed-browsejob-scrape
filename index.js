@@ -6,8 +6,8 @@ const { JSDOM } = jsdom;
 
 const urlBuilder = (letter) => `https://www.indeed.com/browsejobs/letter?title=${letter}`;
 
-async function fetchSalaryLinks(n, url) {
-  return new Promise((resolve, rj) => {
+async function fetchSalaryLinks(n, url, errorCounter, successCounter) {
+  return new Promise((resolve, reject) => {
     curl.get(url, null, async (err, resp, body) => {
       console.log(' ');
       console.log('- SCRAPING URL N', n, ':', url);
@@ -28,12 +28,20 @@ async function fetchSalaryLinks(n, url) {
           console.log('- Will fetch ', salaryLinks.length, 'salary pages.');
           console.log(' ');
 
+          const errorUrls = [];
           for (let i = 0; i < salaryLinks.length; i++) {
-            const res = await fetch(`https://indeed.com${salaryLinks[i]}`);
-            if (res.status === 200) {
-              console.log(n, '-', i, ' - ', salaryLinks[i], ' - status 200 ✓ ');
-            } else {
-              console.log(n, '-', i, ' - ', salaryLinks[i], ' - status ', res.status, ' ✘ ');
+            try {
+              const res = await fetch(`https://indeed.com${salaryLinks[i]}`);
+              if (res.status === 200) {
+                successCounter++;
+                console.log(n, '-', i, ' - ', salaryLinks[i], ' - status 200 ✓ ');
+              } else {
+                console.log(n, '-', i, ' - ', salaryLinks[i], ' - status ', res.status, ' ✘ ');
+              }
+            } catch {
+              errorCounter++;
+              errorUrls.push(i);
+              reject('- ✘ Found a 404 page: ' + url);
             }
           }
           resolve('- ✓ Fetched all salary links from url ' + n + ': ' + url);
@@ -48,6 +56,8 @@ async function fetchSalaryLinks(n, url) {
 }
 
 function startScraping(url) {
+  const errorCounter = 0;
+  const successCounter = 0;
   curl.get(url, null, async (err, resp, body) => {
     if (resp.statusCode == 200) {
       process.stdout.write('.');
@@ -69,11 +79,21 @@ function startScraping(url) {
 
       for (var j = 0; j < letterPagesUrls.length; j++) {
         // we need make this synconous, because otherwise we will get banned by indeed.
-        const status = await fetchSalaryLinks(j, `https://indeed.com${letterPagesUrls[j]}`);
-        console.log(status);
+        try {
+          const status = await fetchSalaryLinks(
+            j,
+            `https://indeed.com${letterPagesUrls[j]}`,
+            errorCounter,
+            successCounter
+          );
+          console.log(status);
+        } catch (error) {
+          console.log(error);
+        }
       }
 
-      console.log('- SCRAPPED ', letterPagesUrls.length * 30, ' SALARY LINKS SUCCESSFULLY');
+      console.log('- SCRAPPED ', successCounter, '200 SALARY LINKS');
+      console.log('- FOUND ', errorCounter, ' 404 SALARY LINKS');
     } else {
       console.log('- ERROR WHILE SCRAPPING THIS PAGE');
     }
