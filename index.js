@@ -41,7 +41,7 @@ async function fetchSalaryLinks(n, url, errorCounter, successCounter) {
             } catch {
               errorCounter++;
               errorUrls.push(i);
-              reject('- ✘ Found a 404 page: ' + url);
+              reject('- ✘ Found a page with ERROR: ' + salaryLinks[i]);
             }
           }
           resolve('- ✓ Fetched all salary links from url ' + n + ': ' + url);
