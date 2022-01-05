@@ -1,0 +1,17 @@
+{
+  "name": "indeed-browsejob-scrape",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "mez.zab",
+  "license": "MIT",
+  "scripts": {
+    "scrape": "node index.js"
+  },
+  "devDependencies": {
+    "curl": "^0.1.4",
+    "jquery": "^3.3.1",
+    "jsdom": "^13.2.0",
+    "axios": "^0.24.0"
+  },
+  "repository": "git@github.com:mezzab/indeed-browsejob-scrape.git"
+}
